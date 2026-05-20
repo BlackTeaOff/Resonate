@@ -98,50 +98,53 @@ class _GalleryScreenState extends State<GalleryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A0A0F), Color(0xFF060608)],
+      body: Stack(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.98, end: 1).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: _buildPage(_currentIndex),
           ),
-        ),
-        child: Stack(
-          children: [
-            ScrollConfiguration(
-              behavior: const _NoGlowScrollBehavior(),
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 100, 16, 120),
-                itemCount: mockGames.length,
-                itemBuilder: (context, index) {
-                  final game = mockGames[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _GameCard(game: game),
-                  );
-                },
-              ),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _GlassHeader(),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 30,
+            child: _FloatingGlassNavBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
             ),
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _GlassHeader(),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 30,
-              child: _FloatingGlassNavBar(
-                currentIndex: _currentIndex,
-                onTap: (index) => setState(() => _currentIndex = index),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 1:
+        return const _ResonatePage(key: ValueKey('resonate'));
+      case 2:
+        return const _SettingsPage(key: ValueKey('settings'));
+      case 0:
+      default:
+        return const _LibraryPage(key: ValueKey('library'));
+    }
   }
 }
 
@@ -155,6 +158,87 @@ class _NoGlowScrollBehavior extends MaterialScrollBehavior {
     ScrollableDetails details,
   ) {
     return child;
+  }
+}
+
+class _LibraryPage extends StatelessWidget {
+  const _LibraryPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0A0A0F), Color(0xFF060608)],
+        ),
+      ),
+      child: ScrollConfiguration(
+        behavior: const _NoGlowScrollBehavior(),
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 150, 16, 120),
+          itemCount: mockGames.length,
+          itemBuilder: (context, index) {
+            final game = mockGames[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _GameCard(game: game),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ResonatePage extends StatelessWidget {
+  const _ResonatePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF000000),
+      child: Center(
+        child: Text(
+          'Resonate Player',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+            shadows: [
+              Shadow(
+                color: Color(0x66000000),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsPage extends StatelessWidget {
+  const _SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF000000),
+      child: Center(
+        child: Text(
+          'Settings',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -190,12 +274,9 @@ class _GlassHeader extends StatelessWidget {
                     color: Colors.white,
                     shadows: [
                       Shadow(
-                        color: const Color(0xFF7B61FF).withOpacity(0.55),
-                        blurRadius: 16,
-                      ),
-                      Shadow(
-                        color: const Color(0xFF35D9FF).withOpacity(0.25),
-                        blurRadius: 28,
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: Offset(0, 1),
                       ),
                     ],
                   ),
@@ -231,8 +312,23 @@ class _GameCardState extends State<_GameCard> {
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: () {
-        // ignore: avoid_print
-        print('Tapped game');
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 320),
+            reverseTransitionDuration: const Duration(milliseconds: 260),
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return GameDetailScreen(game: game);
+            },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              final curved =
+                  CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+              return ScaleTransition(
+                scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
+                child: child,
+              );
+            },
+          ),
+        );
       },
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 120),
@@ -255,34 +351,381 @@ class _GameCardState extends State<_GameCard> {
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: borderRadius,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  game.coverUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const ColoredBox(
-                      color: Color(0xFF121218),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
+          child: Hero(
+            tag: game.id,
+            child: _HeroCover(
+              game: game,
+              borderRadius: borderRadius,
+              overlayOpacity: 1,
+              showMeta: true,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingGlassNavBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _FloatingGlassNavBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const double itemWidth = 92;
+    const double navHeight = 44;
+    const double indicatorInset = 2;
+
+    return SafeArea(
+      top: false,
+      child: Center(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.12),
+                    Colors.white.withOpacity(0.04),
+                  ],
+                ),
+                color: Colors.black.withOpacity(0.35),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.25),
+                  width: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7B61FF).withOpacity(0.20),
+                    blurRadius: 26,
+                    offset: const Offset(0, 12),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.36),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                width: itemWidth * 3,
+                height: navHeight,
+                child: Stack(
+                  children: [
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      left: itemWidth * currentIndex,
+                      top: indicatorInset,
+                      bottom: indicatorInset,
+                      child: Container(
+                        width: itemWidth,
+                        height: navHeight - indicatorInset * 2,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.22),
+                            width: 0.6,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF7B61FF).withOpacity(0.25),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => const ColoredBox(
-                    color: Color(0xFF121218),
-                    child: Center(
-                      child: Icon(Icons.broken_image_outlined, color: Colors.white54),
+                    ),
+                    Row(
+                      children: [
+                        _NavItem(
+                          width: itemWidth,
+                          height: navHeight,
+                          icon: Icons.auto_awesome_mosaic_rounded,
+                          label: 'Library',
+                          active: currentIndex == 0,
+                          onTap: () => onTap(0),
+                        ),
+                        _NavItem(
+                          width: itemWidth,
+                          height: navHeight,
+                          icon: Icons.graphic_eq_rounded,
+                          label: 'Resonate',
+                          active: currentIndex == 1,
+                          onTap: () => onTap(1),
+                        ),
+                        _NavItem(
+                          width: itemWidth,
+                          height: navHeight,
+                          icon: Icons.settings_rounded,
+                          label: 'Settings',
+                          active: currentIndex == 2,
+                          onTap: () => onTap(2),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final double width;
+  final double height;
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.width,
+    required this.height,
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color targetColor = active
+        ? const Color(0xFFB79FFF)
+        : Colors.white.withOpacity(0.58);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<Color?>(
+              duration: const Duration(milliseconds: 250),
+              tween: ColorTween(end: targetColor),
+              builder: (context, color, child) {
+                return Icon(
+                  icon,
+                  size: 18,
+                  color: color,
+                  shadows: active
+                      ? [
+                          Shadow(
+                            color: const Color(0xFF7B61FF).withOpacity(0.55),
+                            blurRadius: 12,
+                          ),
+                        ]
+                      : null,
+                );
+              },
+            ),
+            const SizedBox(height: 2),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.2,
+                color: targetColor,
+                shadows: active
+                    ? [
+                        Shadow(
+                          color: const Color(0xFF7B61FF).withOpacity(0.35),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(label),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GameDetailScreen extends StatelessWidget {
+  final Game game;
+
+  const GameDetailScreen({super.key, required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF000000),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                SizedBox(
+                  height: 300,
+                  width: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Hero(
+                        tag: game.id,
+                        child: _HeroCover(
+                          game: game,
+                          borderRadius: BorderRadius.circular(16),
+                          overlayOpacity: 0,
+                          showMeta: true,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Color(0xFF000000),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 24,
+                        bottom: 20,
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width - 48,
+                          child: Text(
+                            game.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              height: 1.05,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Expanded(
+                  child: ColoredBox(color: Color(0xFF000000)),
+                ),
+              ],
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8),
+                child: ClipOval(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.35),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.18),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon:
+                            const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroCover extends StatelessWidget {
+  final Game game;
+  final BorderRadius borderRadius;
+  final double overlayOpacity;
+  final bool showMeta;
+
+  const _HeroCover({
+    required this.game,
+    required this.borderRadius,
+    required this.overlayOpacity,
+    required this.showMeta,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              game.coverUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const ColoredBox(
+                  color: Color(0xFF121218),
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              },
+              errorBuilder: (_, __, ___) => const ColoredBox(
+                color: Color(0xFF121218),
+                child: Center(
+                  child: Icon(Icons.broken_image_outlined, color: Colors.white54),
+                ),
+              ),
+            ),
+            if (showMeta)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Opacity(
+                  opacity: overlayOpacity,
                   child: ClipRect(
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -353,153 +796,7 @@ class _GameCardState extends State<_GameCard> {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FloatingGlassNavBar extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  const _FloatingGlassNavBar({
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Center(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.12),
-                    Colors.white.withOpacity(0.04),
-                  ],
-                ),
-                color: Colors.black.withOpacity(0.35),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF7B61FF).withOpacity(0.20),
-                    blurRadius: 26,
-                    offset: const Offset(0, 12),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.36),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _NavItem(
-                    icon: Icons.auto_awesome_mosaic_rounded,
-                    label: 'Library',
-                    active: currentIndex == 0,
-                    onTap: () => onTap(0),
-                  ),
-                  const SizedBox(width: 2),
-                  _NavItem(
-                    icon: Icons.graphic_eq_rounded,
-                    label: 'Resonate',
-                    active: currentIndex == 1,
-                    onTap: () => onTap(1),
-                  ),
-                  const SizedBox(width: 2),
-                  _NavItem(
-                    icon: Icons.settings_rounded,
-                    label: 'Settings',
-                    active: currentIndex == 2,
-                    onTap: () => onTap(2),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color = active
-        ? const Color(0xFFB79FFF)
-        : Colors.white.withOpacity(0.58);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: color,
-              shadows: active
-                  ? [
-                      Shadow(
-                        color: const Color(0xFF7B61FF).withOpacity(0.65),
-                        blurRadius: 14,
-                      ),
-                    ]
-                  : null,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                letterSpacing: 0.2,
-                color: color,
-                shadows: active
-                    ? [
-                        Shadow(
-                          color: const Color(0xFF7B61FF).withOpacity(0.45),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
           ],
         ),
       ),
